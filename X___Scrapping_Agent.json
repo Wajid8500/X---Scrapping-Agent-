@@ -1,0 +1,290 @@
+{
+  "name": "X - Scrapping Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -280,
+        0
+      ],
+      "id": "b0a3bf38-3e09-47e2-a210-2f4cae367ecc",
+      "name": "When chat message received",
+      "webhookId": "4a99c160-3fcb-4c24-a6b8-18a9e64cb04f"
+    },
+    {
+      "parameters": {
+        "url": "https://api.twitterapi.io/twitter/tweet/advanced_search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "queryType",
+              "value": "Top"
+            },
+            {
+              "name": "query",
+              "value": "={{ $json.chatInput }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "ae3f7861d2184673b6793629f1fb5342"
+            }
+          ]
+        },
+        "options": {
+          "pagination": {
+            "pagination": {
+              "paginationMode": "responseContainsNextURL",
+              "nextURL": "=https://api.twitterapi.io/twitter/tweet/advanced_search?cursor={{ $response.body.next_cursor }}",
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ $response.body.has_next_page === false }}",
+              "limitPagesFetched": true,
+              "maxRequests": 2
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -60,
+        0
+      ],
+      "id": "d07e9438-0465-471a-bc3d-b63ea3a69b2a",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Initialize an empty array to collect all tweets\nlet allTweets = [];\n\n// Loop through each input item\nfor (let item of $input.all()) {\nif (item.json.tweets && Array.isArray(item.json.tweets)) {\nallTweets = allTweets.concat(item.json.tweets);\n}\n}\n\n// Function to format the date in a more human-readable way\nfunction formatDate(dateString) {\nif (!dateString) return '';\n\ntry {\nconst date = new Date(dateString);\nreturn date.toLocaleString('en-US', {\nyear: 'numeric',\nmonth: 'long',\nday: 'numeric',\nhour: '2-digit',\nminute: '2-digit'\n});\n} catch (error) {\nconsole.log(\"Error formatting date:\", error);\nreturn dateString;\n}\n}\n\n// Remove duplicates by tweet ID\nconst seen = new Set();\nconst uniqueTweets = [];\n\nfor (const tweet of allTweets) {\nconst id = tweet.id;\nif (!seen.has(id)) {\nseen.add(id);\nuniqueTweets.push(tweet);\n}\n}\n\n// Format the cleaned-up tweets\nconst formattedTweets = uniqueTweets.map(tweet => ({\njson: {\ntweetId: tweet.id || '',\nurl: tweet.url || '',\ncontent: tweet.text || '',\nlikeCount: tweet.likeCount || 0,\nretweetCount: tweet.retweetCount || 0,\nreplyCount: tweet.replyCount || 0,\nquoteCount: tweet.quoteCount || 0,\nviewCount: tweet.viewCount || 0,\nbookmarkCount: tweet.bookmarkCount || 0,\ncreatedAt: formatDate(tweet.createdAt)\n}\n}));\n\n// Output all tweets as separate items\nreturn formattedTweets;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        160,
+        0
+      ],
+      "id": "007acca5-0501-4f03-98f7-895e49c132c0",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appiSyNR5c0mTmqTT",
+          "mode": "list",
+          "cachedResultName": "Twitter Scrapper",
+          "cachedResultUrl": "https://airtable.com/appiSyNR5c0mTmqTT"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblEVL3f6pGTiKidC",
+          "mode": "list",
+          "cachedResultName": "Table 1",
+          "cachedResultUrl": "https://airtable.com/appiSyNR5c0mTmqTT/tblEVL3f6pGTiKidC"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "tweetId": "={{ $json.tweetId }}",
+            "url": "={{ $json.url }}",
+            "content": "={{ $json.content }}",
+            "createdAt": "={{ $json.createdAt }}",
+            "likes": "={{ $json.likeCount }}",
+            "Retweets": "={{ $json.retweetCount }}",
+            "Reply": "={{ $json.replyCount }}",
+            "Quote": "={{ $json.quoteCount }}",
+            "View": "={{ $json.viewCount }}",
+            "Bookmark": "={{ $json.bookmarkCount }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "tweetId",
+              "displayName": "tweetId",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "url",
+              "displayName": "url",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "content",
+              "displayName": "content",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "likes",
+              "displayName": "likes",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Retweets",
+              "displayName": "Retweets",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Reply",
+              "displayName": "Reply",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Quote",
+              "displayName": "Quote",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "View",
+              "displayName": "View",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Bookmark",
+              "displayName": "Bookmark",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "createdAt",
+              "displayName": "createdAt",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        380,
+        0
+      ],
+      "id": "36679af3-c93b-476a-810d-1e5d423ebd30",
+      "name": "Airtable",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "UQ1qgSjSkDWGym94",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "be56c440-1fb2-4033-b6fc-4bff691406a3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2fdd68b86a152ec7a8a6cb6d2e8e8af2ebc77d409d4a1c2f0f6bff9243941101"
+  },
+  "id": "AWWFoboL5Snn6rqp",
+  "tags": []
+}
